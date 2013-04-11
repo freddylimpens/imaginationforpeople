@@ -9,7 +9,7 @@ class I4pProjectTranslationIndex(indexes.SearchIndex, indexes.Indexable):
     slug = indexes.CharField(model_attr='slug')
     content_auto = indexes.EdgeNgramField(model_attr='title')
     sites = indexes.MultiValueField()
-
+    
     def get_model(self):
         return I4pProjectTranslation
 
@@ -18,4 +18,4 @@ class I4pProjectTranslationIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.all()
     
     def prepare_sites(self, obj):
-        return [obj.id for obj in obj.project.site.all()]
+        return [obj.id for obj in obj.master.site.all()]
