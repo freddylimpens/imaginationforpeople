@@ -1,4 +1,93 @@
 {% extends 'base.html' %}
+{% load sekizai_tags %}
+
+ {% block extra_script %}
+{% addtoblock "js" strip %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery/jquery-ui-1.10.2.custom.js"></script>
+{% endaddtoblock %}
+{% addtoblock "css" %}
+<link rel="stylesheet" href="{{ STATIC_URL }}css/jquery/jquery-ui-1.10.2.custom.css" />
+{% endaddtoblock %}
+{% addtoblock "css" %}
+<link rel="stylesheet" href="/resources/demos/style.css" />
+  <style>
+  .ui-autocomplete-loading {
+    background: white url('ui-anim_basic_16x16.gif') right center no-repeat;
+  }
+  </style>
+{% endaddtoblock %}
+{% addtoblock "js" %}
+
+<!-- Autocomplete script: 
+FIXME: use tag callback sever side function
+FIXME: split the search input string when suggesting for the 2nd tag (now taking the whole  string)
+-->
+<script type="text/javascript">
+  $(function() {
+    function split( val ) {
+      return val.split( /,\s*/ );
+    }
+    function extractLast( term ) {
+      return split( term ).pop();
+    }
+ 
+    $( "#tag-filter" )
+      // don't navigate away from the field on tab when selecting an item
+      .bind( "keydown", function( event ) {
+        if ( event.keyCode === $.ui.keyCode.TAB &&
+            $( this ).data( "ui-autocomplete" ).menu.active ) {
+          event.preventDefault();
+        }
+      })
+      .autocomplete({
+        source: function( request, response ) {
+            $.ajax({
+                url: "{%url i4p-globalsearch-complete %}", 
+                dataType: "json",
+                data: {
+                    q: request.term
+                 },
+                success: function( data ) {
+                    console.log(data);
+                    response( $.map( data.projects, function( item ) {
+                        
+                        return {
+                            label: item.title,
+                            value: item.title
+                        }
+                    }));
+               }
+            });
+        },
+
+        search: function() {
+          // custom minLength
+          var term = extractLast( this.value );
+          if ( term.length < 3 ) {
+            return false;
+          }
+        },
+        focus: function() {
+          // prevent value inserted on focus
+          return false;
+        },
+        select: function( event, ui ) {
+          var terms = split( this.value );
+          // remove the current input
+          terms.pop();
+          // add the selected item
+          terms.push( ui.item.value );
+          // add placeholder to get the comma-and-space at the end
+          terms.push( "" );
+          this.value = terms.join( ", " );
+          return false;
+        }
+      });
+  });
+  </script>
+{% endaddtoblock %}
+{% endblock %}
+
 
 {% block content %}
 <div class="grid_18" style="height: 1000px">
@@ -14,6 +103,12 @@
                 </td>
             </tr>
         </table>
+     <h2></h2>   
+    <div class="ui-widget">
+      <label for="tag-filter">Tag filtering </label>
+      <input id="tag-filter" size="50" />
+    </div>
+
 
         {% if query %}
         <h3>Results</h3>
